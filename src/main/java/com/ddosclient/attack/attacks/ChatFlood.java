@@ -1,10 +1,10 @@
 package com.ddosclient.attack.attacks;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.network.message.LastSeenMessageList;
 import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 
 import java.time.Instant;
-import java.util.Optional;
 
 public class ChatFlood extends BaseAttack {
     private static final String[] messages = {
@@ -22,7 +22,7 @@ public class ChatFlood extends BaseAttack {
             Instant.now(),
             0L,
             null,
-            new net.minecraft.network.message.ArgumentSignatureDataMap(java.util.List.of())
+            new LastSeenMessageList.Acknowledgment(java.util.BitSet.valueOf(new long[0]), 0)
         ));
     }
 }
