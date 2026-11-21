@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "ddosclient",
+  "version": "${version}",
+  "name": "DDoS Client",
+  "description": "Fabric DDoS client mod",
+  "authors": ["anon"],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.ddosclient.DdosClient"]
+  },
+  "mixins": ["ddosclient.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.14.22",
+    "fabric-api": "*",
+    "minecraft": "~1.20.1"
+  }
+}
